@@ -164,12 +164,11 @@ Planning Loop ──────────────────────
 **Milestone 3 — Individual tool implementations:**
      "I'll give Claude my Tool 1 spec (inputs, return value, failure mode) and ask it to implement
      search_listings() using load_listings() from the data loader — then test it against 3 queries
-     before trusting it" is a plan.
+     before trusting it.
 
 **Milestone 4 — Planning loop and state management:**
-     "I'll give Claude my Tool 1 spec (inputs, return value, failure mode) and ask it to implement
-     search_listings() using load_listings() from the data loader — then test it against 3 queries
-     before trusting it" is a plan.
+     "I'll give Claude my planning loop, state management, error handling, and architecture portions of the planning.md to give a high level overview of my vision and ask it to implement agent.py and app.py with that information. Then I'll ask it to test the system against 3 queries before trusting it. 
+
 
 ---
 
