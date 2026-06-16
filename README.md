@@ -15,7 +15,7 @@ A multi-tool AI agent that helps users find secondhand clothing and figure out h
 - `size` (str | None) — size to filter by. Matching is case-insensitive substring: `"M"` matches `"S/M"` and `"M/L"`. Pass `None` to skip size filtering.
 - `max_price` (float | None) — price ceiling, inclusive. Pass `None` to skip price filtering.
 
-**Output:** `list[dict]` — matching listing dicts sorted by relevance score (highest first). Each dict contains: `id`, `title`, `description`, `category`, `style_tags`, `size`, `condition`, `price`, `colors`, `brand`, `platform`. Returns `[]` if nothing matches — never raises.
+**Output:** `list[dict]` — matching listing dicts sorted by relevance score (highest first).  Returns `Try broader keywords, a higher budget, or remove the size filter`, if nothing matches.
 
 **Scoring:** The query is tokenized into whole words (lowercase). Each listing is scored by how many distinct query keywords appear across its `title`, `description`, `category`, and `style_tags` fields. Listings that match zero keywords are excluded.
 
@@ -23,7 +23,7 @@ A multi-tool AI agent that helps users find secondhand clothing and figure out h
 
 ### `suggest_outfit(new_item: dict, wardrobe: dict) → str`
 
-**Purpose:** Given a thrifted item and the user's wardrobe, uses an LLM to suggest 1–2 complete outfit combinations. Handles an empty wardrobe gracefully.
+**Purpose:** Given a thrifted item and the user's wardrobe, uses an LLM to suggest 1–2 complete outfit combinations. 
 
 **Inputs:**
 - `new_item` (dict) — a listing dict from `search_listings`. Fields used in the prompt: `title`, `price`, `platform`, `condition`.
@@ -39,15 +39,15 @@ A multi-tool AI agent that helps users find secondhand clothing and figure out h
 
 ### `create_fit_card(outfit: str, new_item: dict) → str`
 
-**Purpose:** Generates a 2–4 sentence Instagram/TikTok-style caption for the thrifted find and its outfit. Uses a higher temperature for variety — the same input produces different captions each run.
+**Purpose:** Generates a 2–4 sentence Instagram/TikTok-style caption for the thrifted find and its outfit.
 
 **Inputs:**
 - `outfit` (str) — the outfit suggestion string from `suggest_outfit()`.
 - `new_item` (dict) — the listing dict. Fields used in the prompt: `title`, `price`, `platform`, `condition`.
 
-**Output:** A casual, authentic-sounding caption that mentions the item name, price, and platform naturally once each — e.g., *"found this tour bootleg tee on depop for $24 and it was made for my baggy jeans — graphic tees that actually fit are so rare."*
+**Output:** A casual, authentic-sounding caption that mentions the item name, price, and platform  — e.g., *"found this tour bootleg tee on depop for $24 and it was made for my baggy jeans — graphic tees that actually fit are so rare."*
 
-If `outfit` is empty or whitespace-only, returns `"Unable to generate a fit card — no outfit suggestion was available."` without raising.
+If `outfit` is empty or whitespace-only, returns `"Unable to generate a fit card — no outfit suggestion was available."`
 
 **Model:** `llama-3.3-70b-versatile`, temperature `0.8`.
 
@@ -146,7 +146,7 @@ assert "unable" in result.lower()  # passes
 
 **One way the spec helped:** The planning loop description in the project guide was precise enough to use directly as implementation logic: *"After search_listings runs, check if results is empty. If yes, set an error message in the session and return early. If no, set selected_item = results[0] and proceed to suggest_outfit."* That level of specificity meant the Python code in `run_agent()` mapped one-to-one to the spec without ambiguity.
 
-**One way implementation diverged from the spec:** The initial `planning.md` described state management as tracking `tool_call_id` through Gradio's message history — as if the LLM were routing tool calls in a ReAct loop. In practice, the `agent.py` starter code uses a plain Python session dict and calls each tool function directly. The LLM never selects which tool to call next. The spec was updated to reflect the Python-driven architecture, which is simpler to reason about and test.
+**One way implementation diverged from the spec:** In the inital `planning.md` I described a a `tool_call_id` through Gradio's message history similar to how the lab2-plantadvisor works, but after looking at the requirements in the `agent.py` specifications I realized tha thte python session calls each tool directly and the LLM never slects which tool to call next. 
 
 ---
 
@@ -154,12 +154,12 @@ assert "unable" in result.lower()  # passes
 
 ### Instance 1 — Implementing `search_listings`
 
-I gave Claude the Tool 1 spec block from `planning.md` — including the input parameters with types, the field list from the listing dict, the scoring approach (distinct keyword count across all four fields), and the failure mode (return `[]`, never raise) — and asked it to implement `search_listings()` in `tools.py` using `load_listings()` from the data loader.
+I gave Claude the Tool 1 spec block from `planning.md` — including the input parameters with types, the field list from the listing dict, the scoring approach, and the failure mode and asked it to implement `search_listings()` in `tools.py` using `load_listings()` from the data loader.
 
-**What I reviewed and revised:** The generated implementation used `str.find()` for keyword matching, which would match `"tee"` inside `"coffee"` or `"committee"`. I revised it to use `re.findall(r"\b\w+\b", ...)` for whole-word tokenization on both the query and the listing fields, eliminating false positives. I also verified that `style_tags` (a list) was joined into a string before tokenization, since multi-word tags like `"graphic tee"` needed to be split into individual tokens. I confirmed the fix by running `pytest tests/` against 7 targeted test cases.
+**What I reviewed and revised:** The generated implementation used `str.find()` for keyword matching, which would match `"tee"` inside `"coffee"` or `"committee"`. I revised it to get whole-word tokenization on both the query and the listing fields, eliminating false positives.
 
 ### Instance 2 — Implementing `run_agent` and `handle_query`
 
 I gave Claude the Planning Loop, State Management, and Architecture sections from `planning.md` — including the full ASCII diagram showing the decision branch on empty results — and asked it to implement `run_agent()` in `agent.py` and `handle_query()` in `app.py`.
 
-**What I reviewed and revised:** I checked that the generated `run_agent()` inspected `results == []` before calling `suggest_outfit` (the spec's main guard condition), that values were stored in the session dict by key name rather than as local variables, and that the no-results path left `outfit_suggestion` and `fit_card` as `None`. I also reviewed `handle_query()` to confirm it read from the session dict keys rather than re-running any tools, and that the empty-query guard returned a user-facing message rather than passing an empty string to `run_agent()`. I verified the end-to-end flow by running `python agent.py` and checking both test cases printed in the CLI output.
+**What I reviewed and revised:** I created tests in the tests folder under `test_tools.py` to independently verify the results of the output based on the `planning.md` to double check the code. 
