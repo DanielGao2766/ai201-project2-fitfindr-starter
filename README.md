@@ -1,30 +1,6 @@
-# FitFindr
+# FitFindr - Project 2
 
-A multi-tool AI agent that helps users find secondhand clothing and figure out how to wear it. The agent searches mock thrift listings, suggests outfits based on the user's existing wardrobe, and generates a shareable caption — all from a single natural-language query.
-
-## Setup
-
-```bash
-# Create and activate a virtual environment
-python -m venv .venv
-source .venv/Scripts/activate   # Windows (Git Bash)
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Add your Groq API key
-echo "GROQ_API_KEY=your_key_here" > .env
-```
-
-Run the app:
-```bash
-python app.py
-```
-
-Run tests:
-```bash
-pytest tests/
-```
+A multi-tool AI agent that helps users find secondhand clothing and figure out how to wear it. The agent searches mock thrift listings, suggests outfits based on the user's existing wardrobe, and generates a shareable caption based on a single user query about what clothing they are looking for. 
 
 ---
 
